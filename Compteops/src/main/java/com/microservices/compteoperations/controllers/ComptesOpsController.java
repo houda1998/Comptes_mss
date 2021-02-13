@@ -48,7 +48,7 @@ public class ComptesOpsController {
     @GetMapping("/comptes/{id}/clients")
     Compte compteclient(@PathVariable("id") Long compteId
     ){
-       return compteOpsService.getCompteetClient(compteId);
+       return compteOpsService.getCompteClient(compteId);
     }
 
     @PostMapping("/comptes/{id}/etat")

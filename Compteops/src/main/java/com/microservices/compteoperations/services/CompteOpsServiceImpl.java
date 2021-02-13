@@ -1,9 +1,6 @@
 package com.microservices.compteoperations.services;
 
-import com.microservices.compteoperations.entities.Compte;
-import com.microservices.compteoperations.entities.EtatCompte;
-import com.microservices.compteoperations.entities.Operation;
-import com.microservices.compteoperations.entities.TypeCompte;
+import com.microservices.compteoperations.entities.*;
 import com.microservices.compteoperations.feign.ClientsRestClient;
 import com.microservices.compteoperations.respositories.ComptesRepository;
 import com.microservices.compteoperations.respositories.OperationsRepository;
@@ -43,6 +40,13 @@ public class CompteOpsServiceImpl implements CompteOpsService {
     public Compte verseMontantCompte(Long compteId, double montant) {
         Compte compte = findCompteByIdOrFail(compteId);
         compte.setSolde(compte.getSolde() + montant);
+
+        Operation operation = new Operation();
+        operation.setMontant(montant);
+        operation.setType(TypeOperation.CREDIT);
+        operation.setCompte(compte);
+
+        compte.getOperations().add(operation);
         comptesRepository.save(compte);
         return compte;
     }
@@ -53,6 +57,11 @@ public class CompteOpsServiceImpl implements CompteOpsService {
         if(compte.getSolde() < montant )
             throw new RuntimeException("Solde Insuffisant !");
         compte.setSolde(compte.getSolde() - montant);
+        Operation operation = new Operation();
+        operation.setMontant(montant);
+        operation.setType(TypeOperation.DEBIT);
+
+        compte.getOperations().add(operation);
         comptesRepository.save(compte);
         return compte;
     }
@@ -61,7 +70,7 @@ public class CompteOpsServiceImpl implements CompteOpsService {
     public double virementCompte(Long compteDmetteurId, Long compteDestinataireId, double montant) {
         Compte compteEmetteur = findCompteByIdOrFail(compteDmetteurId);
         if(compteEmetteur.getSolde() < montant)
-                    throw  new RuntimeException("Solde Insuffisant");
+            throw  new RuntimeException("Solde Insuffisant");
 
         retraitMontantCompte(compteDmetteurId, montant);
         verseMontantCompte(compteDestinataireId, montant);
@@ -75,9 +84,10 @@ public class CompteOpsServiceImpl implements CompteOpsService {
     }
 
     @Override
-    public Compte getCompteetClient(Long compteId) {
+    public Compte getCompteClient(Long compteId) {
         Compte compte = findCompteByIdOrFail(compteId);
-        compte.setClient(clientsRestClient.findClientById(compte.getClientId()));
+        if(compte.getClientId()!=null)
+            compte.setClient(clientsRestClient.findClientById(compte.getClientId()));
         return compte;
     }
 
